@@ -1,0 +1,24 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Verificar Código (Compilar)",
+            "type": "shell",
+            "command": ".\\compilar.ps1",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            }
+        },
+        {
+            "label": "Rodar Sistema",
+            "type": "shell",
+            "command": ".\\run.ps1",
+            "group": "test"
+        }
+    ]
+}

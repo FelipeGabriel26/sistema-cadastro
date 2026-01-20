@@ -6,6 +6,5 @@ env/
 .env
 .DS_Store
 instance/
-.vscode/
 *.log
 *.sqlite
