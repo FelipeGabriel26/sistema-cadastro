@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistema de Cadastro{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+{# Adiciona classe 'auth-page' se estiver em login ou registro para ativar o fundo azul #}
+{% set body_class = 'auth-page' if request.endpoint in ['login', 'registro'] else '' %}
+
+<body class="{{ body_class }}">
+    {% if request.endpoint not in ['login', 'registro'] %}
+    <nav class="navbar">
+        <div class="navbar-container">
+            <div class="navbar-brand">
+                <a href="{{ url_for('pagina_inicial') }}"
+                    style="text-decoration: none; display: flex; align-items: center; gap: 10px;">
+                    <i class="fas fa-id-card" style="color: var(--primary); font-size: 1.5rem;"></i>
+                    <span
+                        style="color: var(--primary); font-weight: 800; font-size: 1.25rem; letter-spacing: -0.5px;">Sistema
+                        de Cadastro</span>
+                </a>
+            </div>
+            <div class="navbar-menu">
+                {% if current_user.is_authenticated %}
+                <span class="user-info">
+                    <span class="user-badge user-badge-{{ current_user.tipo_usuario.lower() }}">
+                        {{ current_user.tipo_usuario }}
+                    </span>
+                    {{ current_user.nome }}
+                </span>
+                <a href="{{ url_for('dashboard') }}" class="btn btn-outline">Dashboard</a>
+                <a href="{{ url_for('sair') }}" class="btn btn-outline">Sair</a>
+                {% else %}
+                <a href="{{ url_for('login') }}" class="btn btn-outline">Entrar</a>
+                <a href="{{ url_for('registro') }}" class="btn btn-primary">Cadastrar</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    {% endif %}
+
+    <main class="main-content">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }}">
+                {{ message }}
+                <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+
+</html>

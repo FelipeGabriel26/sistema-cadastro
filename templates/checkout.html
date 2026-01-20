@@ -1,0 +1,178 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Sistema de Reservas{% endblock %}
+
+{% block content %}
+<div class="checkout-container">
+    <div class="checkout-header">
+        <h2>Finalizar Reserva</h2>
+        <p>Complete seus dados para garantir sua vaga/quarto</p>
+    </div>
+
+    <div class="checkout-grid">
+        <!-- Coluna da Esquerda: Formulário -->
+        <div class="checkout-form-col">
+            <form action="{{ url_for('processar_checkout') }}" method="POST" id="checkoutForm">
+                <input type="hidden" name="tipo_servico" value="{{ tipo_servico }}">
+                <input type="hidden" name="valor_base" value="{{ valor }}">
+
+                <!-- Seção 1: Identificação (Se não logado) -->
+                <div class="checkout-section">
+                    <h3>1. Identificação</h3>
+                    {% if current_user.is_authenticated %}
+                    <div class="logged-user-info">
+                        <p>Logado como: <strong>{{ current_user.nome }}</strong></p>
+                        <p class="text-muted">{{ current_user.email }}</p>
+                        <input type="hidden" name="guest_mode" value="false">
+                    </div>
+                    {% else %}
+                    <div class="guest-tabs">
+                        <button type="button" class="tab-btn active" onclick="switchTab('guest')">Checkout como
+                            Convidado</button>
+                        <button type="button" class="tab-btn"
+                            onclick="window.location.href='{{ url_for('login', next=request.url) }}';">Já tenho
+                            conta</button>
+                    </div>
+
+                    <input type="hidden" name="guest_mode" value="true">
+
+                    <div class="form-group">
+                        <label for="email">E-mail para confirmação *</label>
+                        <input type="email" name="email" id="email" class="form-input" required
+                            placeholder="seu@email.com">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nome">Nome Completo *</label>
+                            <input type="text" name="nome" id="nome" class="form-input" required placeholder="Seu nome">
+                        </div>
+                        <div class="form-group">
+                            <label for="cpf">CPF *</label>
+                            <input type="text" name="cpf" id="cpf" class="form-input" required
+                                placeholder="000.000.000-00" maxlength="14" oninput="mascaraCPF(this)">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="telefone">Telefone/Celular *</label>
+                        <input type="text" name="telefone" id="telefone" class="form-input" required
+                            placeholder="(00) 00000-0000" maxlength="15" oninput="mascaraTelefone(this)">
+                    </div>
+                    {% endif %}
+                </div>
+
+                <!-- Seção 2: Detalhes da Reserva -->
+                <div class="checkout-section">
+                    <h3>2. Detalhes da Reserva</h3>
+
+                    {% if tipo_servico == 'HOTEL' %}
+                    <div class="form-group">
+                        <label for="data_entrada">Data de Entrada</label>
+                        <input type="datetime-local" name="data_entrada" id="data_entrada" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="data_saida">Data de Saída Prevista</label>
+                        <input type="datetime-local" name="data_saida" id="data_saida" class="form-input" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Preferência de Quarto</label>
+                        <select name="numero_quarto" class="form-input">
+                            <option value="PADRAO">Padrão</option>
+                            <option value="LUXO">Luxo (+ R$ 50,00)</option>
+                        </select>
+                    </div>
+                    {% else %}
+                    <div class="form-group">
+                        <label for="placa">Placa do Veículo</label>
+                        <input type="text" name="placa_veiculo" id="placa" class="form-input" required
+                            placeholder="ABC-1234">
+                    </div>
+                    <div class="form-group">
+                        <label for="data_entrada">Data de Entrada</label>
+                        <input type="datetime-local" name="data_entrada" id="data_entrada" class="form-input" required>
+                    </div>
+                    {% endif %}
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-block btn-lg mt-4">
+                    Confirmar Reserva e Pagar
+                </button>
+            </form>
+        </div>
+
+        <!-- Coluna da Direita: Resumo -->
+        <div class="checkout-summary-col">
+            <div class="summary-card">
+                <h3>Resumo do Pedido</h3>
+                <div class="summary-item">
+                    <span>Serviço</span>
+                    <strong>{{ "Hospedagem" if tipo_servico == 'HOTEL' else "Estacionamento" }}</strong>
+                </div>
+                <div class="summary-item">
+                    <span>Valor Base</span>
+                    <span>R$ {{ valor }},00</span>
+                </div>
+                <hr>
+                <div class="summary-total">
+                    <span>Total Estimado</span>
+                    <strong>R$ {{ valor }},00</strong>
+                </div>
+                <div class="security-badge">
+                    <i class="fas fa-lock"></i> Compra 100% Segura
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function mascaraCPF(i) {
+        var v = i.value;
+        if (isNaN(v[v.length - 1])) {
+            i.value = v.substring(0, v.length - 1);
+            return;
+        }
+        i.setAttribute("maxlength", "14");
+        if (v.length == 3 || v.length == 7) i.value += ".";
+        if (v.length == 11) i.value += "-";
+    }
+
+    function mascaraTelefone(i) {
+        var v = i.value;
+        if (isNaN(v[v.length - 1])) {
+            i.value = v.substring(0, v.length - 1);
+            return;
+        }
+        i.setAttribute("maxlength", "15");
+        if (v.length == 1) i.value = "(" + v;
+        if (v.length == 3) i.value += ") ";
+        if (v.length == 10) i.value += "-";
+    }
+
+    // Set default date to now + 1 hour
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    const dateInputs = document.querySelectorAll('input[type="datetime-local"]');
+    dateInputs.forEach(input => {
+        if (!input.value) input.value = now.toISOString().slice(0, 16);
+    });
+
+    function switchTab(mode) {
+        const tabs = document.querySelectorAll('.tab-btn');
+        tabs.forEach(t => t.classList.remove('active'));
+
+        // Logic to switch view could be added here if we had multiple divs, 
+        // but currently the "Login" button is just a link. 
+        // So we only highlight the current tab.
+        // If we wanted inline login, we would toggle visibility of forms.
+        // For now, the 'active' class on Guest is static unless we are building a SPA.
+        // But let's at least make it look interactive.
+        event.target.classList.add('active');
+
+        if (mode === 'login') {
+            window.location.href = "{{ url_for('login', next=request.url) }}";
+        }
+    }
+</script>
+{% endblock %}
+```

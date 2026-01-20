@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Funcionário{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>👔 Painel do Funcionário</h1>
+        <p>Gerencie reservas e atenda clientes</p>
+    </div>
+
+    <!-- Card de Ponto -->
+    <div class="ponto-card">
+        <div class="ponto-header">
+            <h2>⏰ Registro de Ponto</h2>
+            <div id="pontoStatus" class="ponto-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Verificando...</span>
+            </div>
+        </div>
+        <div class="ponto-body">
+            <div id="pontoInfo" class="ponto-info">
+                <p>Clique no botão abaixo para registrar seu ponto</p>
+            </div>
+            <button id="btnBaterPonto" onclick="baterPonto()" class="btn btn-primary btn-large">
+                Bater Ponto
+            </button>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('nova-reserva')">Nova Reserva</button>
+        <button class="tab-btn" onclick="switchTab('promocoes')">Promoções</button>
+        <button class="tab-btn" onclick="switchTab('meu-ponto')">Meu Histórico</button>
+    </div>
+
+    <!-- Tab: Nova Reserva -->
+    <div id="tab-nova-reserva" class="tab-content active">
+        <div class="section-header">
+            <h2>Criar Nova Reserva</h2>
+        </div>
+
+        <form id="formNovaReserva" class="reserva-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="cpfCliente">CPF do Cliente *</label>
+                    <input type="text" id="cpfCliente" required maxlength="14" placeholder="000.000.000-00"
+                        class="form-input">
+                    <small id="clienteInfo" class="form-hint"></small>
+                </div>
+
+                <div class="form-group">
+                    <label for="tipoServico">Tipo de Serviço *</label>
+                    <select id="tipoServico" required class="form-select" onchange="toggleCamposServico()">
+                        <option value="">Selecione...</option>
+                        <option value="HOTEL">Hotel</option>
+                        <option value="GARAGEM">Garagem</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Campos específicos para Hotel -->
+            <div id="camposHotel" class="campos-servico" style="display: none;">
+                <div class="form-group">
+                    <label for="numeroQuarto">Número do Quarto</label>
+                    <input type="text" id="numeroQuarto" placeholder="Ex: 101" class="form-input">
+                </div>
+            </div>
+
+            <!-- Campos específicos para Garagem -->
+            <div id="camposGaragem" class="campos-servico" style="display: none;">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="placaVeiculo">Placa do Veículo</label>
+                        <input type="text" id="placaVeiculo" placeholder="ABC-1234" class="form-input" maxlength="8">
+                    </div>
+                    <div class="form-group">
+                        <label for="numeroVaga">Número da Vaga</label>
+                        <input type="text" id="numeroVaga" placeholder="Ex: A-15" class="form-input">
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="dataSaidaPrevista">Data de Saída Prevista</label>
+                    <input type="datetime-local" id="dataSaidaPrevista" class="form-input">
+                </div>
+
+                <div class="form-group">
+                    <label for="valorBase">Valor Base (R$) *</label>
+                    <input type="number" id="valorBase" required step="0.01" min="0" placeholder="0.00"
+                        class="form-input" onchange="calcularValorFinal()">
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="promocaoAplicada">Promoção</label>
+                    <select id="promocaoAplicada" class="form-select" onchange="calcularValorFinal()">
+                        <option value="0">Sem promoção</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Valor Final</label>
+                    <div class="valor-final">
+                        <span id="valorFinal">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success btn-block">
+                Criar Reserva
+            </button>
+        </form>
+    </div>
+
+    <!-- Tab: Promoções -->
+    <div id="tab-promocoes" class="tab-content">
+        <div class="section-header">
+            <h2>Promoções Ativas</h2>
+        </div>
+
+        <div id="promocoesGrid" class="promocoes-grid">
+            <p class="text-center">Carregando promoções...</p>
+        </div>
+    </div>
+
+    <!-- Tab: Meu Histórico de Ponto -->
+    <div id="tab-meu-ponto" class="tab-content">
+        <div class="section-header">
+            <h2>Meu Histórico de Ponto</h2>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Entrada</th>
+                        <th>Saída</th>
+                        <th>Total de Horas</th>
+                        <th>Observações</th>
+                    </tr>
+                </thead>
+                <tbody id="pontoHistoricoBody">
+                    <tr>
+                        <td colspan="5" class="text-center">Carregando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+    let pontoHoje = null;
+
+    // Máscaras
+    document.getElementById('cpfCliente').addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.length <= 11) {
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d)/, '$1.$2');
+            value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+            e.target.value = value;
+        }
+    });
+
+    document.getElementById('placaVeiculo').addEventListener('input', function (e) {
+        e.target.value = e.target.value.toUpperCase();
+    });
+
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+
+        if (tabName === 'promocoes') carregarPromocoes();
+        else if (tabName === 'meu-ponto') carregarMeuPonto();
+    }
+
+    function toggleCamposServico() {
+        const tipo = document.getElementById('tipoServico').value;
+        document.getElementById('camposHotel').style.display = tipo === 'HOTEL' ? 'block' : 'none';
+        document.getElementById('camposGaragem').style.display = tipo === 'GARAGEM' ? 'block' : 'none';
+    }
+
+    function calcularValorFinal() {
+        const valorBase = parseFloat(document.getElementById('valorBase').value) || 0;
+        const desconto = parseFloat(document.getElementById('promocaoAplicada').value) || 0;
+        const valorFinal = valorBase - (valorBase * desconto / 100);
+        document.getElementById('valorFinal').textContent = `R$ ${valorFinal.toFixed(2)}`;
+    }
+
+    async function verificarPontoHoje() {
+        try {
+            const response = await fetch('/api/funcionario/meu-ponto');
+            const data = await response.json();
+
+            const hoje = new Date().toISOString().split('T')[0];
+            pontoHoje = data.pontos.find(p => p.data === hoje);
+
+            const statusEl = document.getElementById('pontoStatus');
+            const infoEl = document.getElementById('pontoInfo');
+            const btnEl = document.getElementById('btnBaterPonto');
+
+            if (!pontoHoje) {
+                statusEl.innerHTML = '<span class="status-dot status-inactive"></span><span class="status-text">Você ainda não bateu ponto hoje</span>';
+                infoEl.innerHTML = '<p>Clique no botão para registrar sua <strong>entrada</strong></p>';
+                btnEl.textContent = 'Registrar Entrada';
+            } else if (!pontoHoje.hora_saida) {
+                const entrada = new Date(pontoHoje.hora_entrada);
+                statusEl.innerHTML = '<span class="status-dot status-active"></span><span class="status-text">Você está trabalhando</span>';
+                infoEl.innerHTML = `<p>Entrada registrada às <strong>${entrada.toLocaleTimeString('pt-BR')}</strong></p>`;
+                btnEl.textContent = 'Registrar Saída';
+            } else {
+                const entrada = new Date(pontoHoje.hora_entrada);
+                const saida = new Date(pontoHoje.hora_saida);
+                statusEl.innerHTML = '<span class="status-dot status-complete"></span><span class="status-text">Ponto completo</span>';
+                infoEl.innerHTML = `
+                <p>Entrada: <strong>${entrada.toLocaleTimeString('pt-BR')}</strong></p>
+                <p>Saída: <strong>${saida.toLocaleTimeString('pt-BR')}</strong></p>
+                <p>Total: <strong>${pontoHoje.total_horas}h</strong></p>
+            `;
+                btnEl.disabled = true;
+                btnEl.textContent = 'Ponto Completo';
+            }
+        } catch (error) {
+            console.error('Erro ao verificar ponto:', error);
+        }
+    }
+
+    async function baterPonto() {
+        try {
+            const response = await fetch('/api/funcionario/bater-ponto', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(data.message, 'success');
+                verificarPontoHoje();
+            } else {
+                showAlert(data.message, 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao bater ponto', 'error');
+        }
+    }
+
+    async function carregarPromocoes() {
+        const grid = document.getElementById('promocoesGrid');
+
+        try {
+            const response = await fetch('/api/funcionario/promocoes');
+            const data = await response.json();
+
+            // Atualizar select de promoções
+            const select = document.getElementById('promocaoAplicada');
+            select.innerHTML = '<option value="0">Sem promoção</option>';
+            data.promocoes.forEach(p => {
+                select.innerHTML += `<option value="${p.desconto_percentual}">${p.nome} - ${p.desconto_percentual}%</option>`;
+            });
+
+            // Mostrar grid de promoções
+            if (data.promocoes.length === 0) {
+                grid.innerHTML = '<p class="text-center">Nenhuma promoção ativa no momento</p>';
+                return;
+            }
+
+            grid.innerHTML = data.promocoes.map(p => `
+            <div class="promocao-card">
+                <div class="promocao-badge">${p.desconto_percentual}% OFF</div>
+                <h3>${p.nome}</h3>
+                <p>${p.descricao || 'Sem descrição'}</p>
+                <div class="promocao-info">
+                    <span class="badge badge-${p.tipo_servico.toLowerCase()}">${p.tipo_servico}</span>
+                    <span class="promocao-validade">Válido até ${formatarData(p.data_fim)}</span>
+                </div>
+            </div>
+        `).join('');
+        } catch (error) {
+            grid.innerHTML = '<p class="text-center text-error">Erro ao carregar promoções</p>';
+        }
+    }
+
+    async function carregarMeuPonto() {
+        const tbody = document.getElementById('pontoHistoricoBody');
+
+        try {
+            const response = await fetch('/api/funcionario/meu-ponto');
+            const data = await response.json();
+
+            if (data.pontos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum registro encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.pontos.map(p => `
+            <tr>
+                <td>${formatarData(p.data)}</td>
+                <td>${formatarHora(p.hora_entrada)}</td>
+                <td>${p.hora_saida ? formatarHora(p.hora_saida) : '<span class="text-muted">Em andamento</span>'}</td>
+                <td>${p.total_horas ? p.total_horas + 'h' : '-'}</td>
+                <td>${p.observacoes || '-'}</td>
+            </tr>
+        `).join('');
+        } catch (error) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-error">Erro ao carregar histórico</td></tr>';
+        }
+    }
+
+    document.getElementById('formNovaReserva').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = {
+            cpf_cliente: document.getElementById('cpfCliente').value,
+            tipo_servico: document.getElementById('tipoServico').value,
+            placa_veiculo: document.getElementById('placaVeiculo').value || null,
+            numero_quarto: document.getElementById('numeroQuarto').value || null,
+            numero_vaga: document.getElementById('numeroVaga').value || null,
+            data_saida_prevista: document.getElementById('dataSaidaPrevista').value || null,
+            valor_base: document.getElementById('valorBase').value,
+            desconto_percentual: document.getElementById('promocaoAplicada').value
+        };
+
+        try {
+            const response = await fetch('/api/funcionario/criar-reserva', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(data.message, 'success');
+                e.target.reset();
+                calcularValorFinal();
+            } else {
+                showAlert(data.error || 'Erro ao criar reserva', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao criar reserva', 'error');
+        }
+    });
+
+    function formatarData(isoString) {
+        if (!isoString) return '-';
+        return new Date(isoString).toLocaleDateString('pt-BR');
+    }
+
+    function formatarHora(isoString) {
+        if (!isoString) return '-';
+        return new Date(isoString).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Inicializar
+    verificarPontoHoje();
+    carregarPromocoes();
+    setInterval(verificarPontoHoje, 60000); // Atualizar a cada minuto
+</script>
+{% endblock %}

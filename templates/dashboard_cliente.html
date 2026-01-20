@@ -1,0 +1,355 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Cliente{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header dashboard-header-cliente">
+        <h1>👤 Bem-vindo, {{ current_user.nome }}!</h1>
+        <p>Gerencie suas reservas e aproveite nossas promoções</p>
+    </div>
+
+    <!-- Card de Boas-vindas -->
+    <div class="welcome-card">
+        <div class="welcome-content">
+            <div class="welcome-icon">🎉</div>
+            <div class="welcome-text">
+                {% if current_user.total_visitas > 1 %}
+                <h2>Que bom ter você de volta!</h2>
+                <p>Esta é sua <strong>{{ current_user.total_visitas }}ª visita</strong>. Obrigado pela sua fidelidade!
+                </p>
+                {% else %}
+                <h2>Seja muito bem-vindo!</h2>
+                <p>Esta é sua primeira visita. Esperamos que tenha uma ótima experiência!</p>
+                {% endif %}
+            </div>
+        </div>
+        <div class="welcome-stats">
+            <div class="welcome-stat">
+                <span class="stat-icon">📅</span>
+                <div>
+                    <p class="stat-label">Membro desde</p>
+                    <p class="stat-value">{{ current_user.data_cadastro.strftime('%d/%m/%Y') }}</p>
+                </div>
+            </div>
+            <div class="welcome-stat">
+                <span class="stat-icon">🔄</span>
+                <div>
+                    <p class="stat-label">Total de visitas</p>
+                    <p class="stat-value">{{ current_user.total_visitas }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('nova-reserva')">Nova Reserva</button>
+        <button class="tab-btn" onclick="switchTab('minhas-reservas')">Minhas Reservas</button>
+        <button class="tab-btn" onclick="switchTab('promocoes')">Promoções</button>
+    </div>
+
+    <!-- Tab: Nova Reserva -->
+    <div id="tab-nova-reserva" class="tab-content active">
+        <div class="section-header">
+            <h2>Fazer Nova Reserva</h2>
+        </div>
+
+        <div class="servicos-grid">
+            <div class="servico-card" onclick="selecionarServico('HOTEL')">
+                <div class="servico-icon">🏨</div>
+                <h3>Hotel</h3>
+                <p>Reserve um quarto confortável</p>
+                <button class="btn btn-primary">Selecionar</button>
+            </div>
+
+            <div class="servico-card" onclick="selecionarServico('GARAGEM')">
+                <div class="servico-icon">🚗</div>
+                <h3>Garagem</h3>
+                <p>Estacione seu veículo com segurança</p>
+                <button class="btn btn-primary">Selecionar</button>
+            </div>
+        </div>
+
+        <!-- Formulário de Reserva (inicialmente oculto) -->
+        <div id="formReservaContainer" class="form-container" style="display: none;">
+            <form id="formNovaReserva" class="reserva-form">
+                <input type="hidden" id="tipoServico">
+
+                <div id="camposHotel" class="campos-servico" style="display: none;">
+                    <h3>📋 Detalhes da Reserva - Hotel</h3>
+                    <div class="form-group">
+                        <label for="numeroQuarto">Número do Quarto Preferido (opcional)</label>
+                        <input type="text" id="numeroQuarto" placeholder="Ex: 101" class="form-input">
+                    </div>
+                </div>
+
+                <div id="camposGaragem" class="campos-servico" style="display: none;">
+                    <h3>📋 Detalhes da Reserva - Garagem</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="placaVeiculo">Placa do Veículo *</label>
+                            <input type="text" id="placaVeiculo" placeholder="ABC-1234" class="form-input"
+                                maxlength="8">
+                        </div>
+                        <div class="form-group">
+                            <label for="numeroVaga">Vaga Preferida (opcional)</label>
+                            <input type="text" id="numeroVaga" placeholder="Ex: A-15" class="form-input">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="dataSaidaPrevista">Data e Hora de Saída Prevista</label>
+                    <input type="datetime-local" id="dataSaidaPrevista" class="form-input">
+                </div>
+
+                <div class="preco-section">
+                    <h3>💰 Valores</h3>
+                    <div class="preco-info">
+                        <div class="preco-item">
+                            <span>Valor base:</span>
+                            <span class="preco-valor" id="valorBaseDisplay">R$ 100,00</span>
+                        </div>
+                        <div class="preco-item preco-destaque">
+                            <span>Valor final:</span>
+                            <span class="preco-valor-final" id="valorFinalDisplay">R$ 100,00</span>
+                        </div>
+                    </div>
+                    <input type="hidden" id="valorBase" value="100">
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" onclick="cancelarReserva()" class="btn btn-outline">
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-success">
+                        Confirmar Reserva
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tab: Minhas Reservas -->
+    <div id="tab-minhas-reservas" class="tab-content">
+        <div class="section-header">
+            <h2>Minhas Reservas</h2>
+        </div>
+
+        <div id="reservasContainer" class="reservas-container">
+            <p class="text-center">Carregando suas reservas...</p>
+        </div>
+    </div>
+
+    <!-- Tab: Promoções -->
+    <div id="tab-promocoes" class="tab-content">
+        <div class="section-header">
+            <h2>Promoções Disponíveis para Você</h2>
+        </div>
+
+        <div id="promocoesGrid" class="promocoes-grid">
+            <p class="text-center">Carregando promoções...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function switchTab(tabName) {
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+
+        if (tabName === 'minhas-reservas') carregarMinhasReservas();
+        else if (tabName === 'promocoes') carregarPromocoes();
+    }
+
+    function selecionarServico(tipo) {
+        document.getElementById('tipoServico').value = tipo;
+        document.getElementById('formReservaContainer').style.display = 'block';
+
+        // Mostrar campos específicos
+        document.getElementById('camposHotel').style.display = tipo === 'HOTEL' ? 'block' : 'none';
+        document.getElementById('camposGaragem').style.display = tipo === 'GARAGEM' ? 'block' : 'none';
+
+        // Ajustar valor base
+        const valorBase = tipo === 'HOTEL' ? 150 : 50;
+        document.getElementById('valorBase').value = valorBase;
+        document.getElementById('valorBaseDisplay').textContent = `R$ ${valorBase.toFixed(2)}`;
+        document.getElementById('valorFinalDisplay').textContent = `R$ ${valorBase.toFixed(2)}`;
+
+        // Scroll suave para o formulário
+        document.getElementById('formReservaContainer').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function cancelarReserva() {
+        document.getElementById('formReservaContainer').style.display = 'none';
+        document.getElementById('formNovaReserva').reset();
+    }
+
+    document.getElementById('placaVeiculo')?.addEventListener('input', function (e) {
+        e.target.value = e.target.value.toUpperCase();
+    });
+
+    document.getElementById('formNovaReserva').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const tipo = document.getElementById('tipoServico').value;
+        const formData = {
+            tipo_servico: tipo,
+            placa_veiculo: tipo === 'GARAGEM' ? document.getElementById('placaVeiculo').value : null,
+            numero_quarto: tipo === 'HOTEL' ? document.getElementById('numeroQuarto').value : null,
+            numero_vaga: tipo === 'GARAGEM' ? document.getElementById('numeroVaga').value : null,
+            data_saida_prevista: document.getElementById('dataSaidaPrevista').value || null,
+            valor_base: document.getElementById('valorBase').value
+        };
+
+        // Validação específica
+        if (tipo === 'GARAGEM' && !formData.placa_veiculo) {
+            showAlert('Por favor, informe a placa do veículo', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/cliente/nova-reserva', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(formData)
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                showAlert(data.message, 'success');
+                cancelarReserva();
+                switchTab('minhas-reservas');
+            } else {
+                showAlert(data.error || 'Erro ao criar reserva', 'error');
+            }
+        } catch (error) {
+            showAlert('Erro ao criar reserva', 'error');
+        }
+    });
+
+    async function carregarMinhasReservas() {
+        const container = document.getElementById('reservasContainer');
+
+        try {
+            const response = await fetch('/api/cliente/minhas-reservas');
+            const data = await response.json();
+
+            if (data.reservas.length === 0) {
+                container.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <h3>Nenhuma reserva encontrada</h3>
+                    <p>Você ainda não fez nenhuma reserva. Que tal começar agora?</p>
+                    <button onclick="switchTab('nova-reserva')" class="btn btn-primary">
+                        Fazer Reserva
+                    </button>
+                </div>
+            `;
+                return;
+            }
+
+            container.innerHTML = data.reservas.map(r => {
+                const statusClass = r.status === 'ATIVA' ? 'active' : r.status === 'FINALIZADA' ? 'complete' : 'inactive';
+                const statusText = r.status === 'ATIVA' ? 'Ativa' : r.status === 'FINALIZADA' ? 'Finalizada' : 'Cancelada';
+                const servicoIcon = r.tipo_servico === 'HOTEL' ? '🏨' : '🚗';
+
+                return `
+                <div class="reserva-card">
+                    <div class="reserva-header">
+                        <div class="reserva-tipo">
+                            <span class="reserva-icon">${servicoIcon}</span>
+                            <span class="reserva-tipo-text">${r.tipo_servico}</span>
+                        </div>
+                        <span class="status-badge status-${statusClass}">${statusText}</span>
+                    </div>
+                    <div class="reserva-body">
+                        <div class="reserva-info">
+                            ${r.numero_quarto ? `<p><strong>Quarto:</strong> ${r.numero_quarto}</p>` : ''}
+                            ${r.placa_veiculo ? `<p><strong>Placa:</strong> ${r.placa_veiculo}</p>` : ''}
+                            ${r.numero_vaga ? `<p><strong>Vaga:</strong> ${r.numero_vaga}</p>` : ''}
+                            <p><strong>Entrada:</strong> ${formatarDataHora(r.data_entrada)}</p>
+                            ${r.data_saida_prevista ? `<p><strong>Saída prevista:</strong> ${formatarDataHora(r.data_saida_prevista)}</p>` : ''}
+                            ${r.data_saida_real ? `<p><strong>Saída real:</strong> ${formatarDataHora(r.data_saida_real)}</p>` : ''}
+                        </div>
+                        <div class="reserva-valor">
+                            <p class="valor-label">Valor</p>
+                            <p class="valor-amount">R$ ${r.valor_final.toFixed(2)}</p>
+                            ${r.desconto_percentual > 0 ? `<p class="valor-desconto">${r.desconto_percentual}% de desconto aplicado</p>` : ''}
+                        </div>
+                    </div>
+                    ${r.observacoes ? `<div class="reserva-footer"><p><strong>Obs:</strong> ${r.observacoes}</p></div>` : ''}
+                </div>
+            `;
+            }).join('');
+        } catch (error) {
+            container.innerHTML = '<p class="text-center text-error">Erro ao carregar reservas</p>';
+        }
+    }
+
+    async function carregarPromocoes() {
+        const grid = document.getElementById('promocoesGrid');
+
+        try {
+            const response = await fetch('/api/cliente/promocoes-disponiveis');
+            const data = await response.json();
+
+            if (data.promocoes.length === 0) {
+                grid.innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-icon">🎁</div>
+                    <h3>Nenhuma promoção disponível</h3>
+                    <p>Continue visitando para desbloquear promoções exclusivas!</p>
+                </div>
+            `;
+                return;
+            }
+
+            grid.innerHTML = data.promocoes.map(p => `
+            <div class="promocao-card promocao-card-cliente">
+                <div class="promocao-badge promocao-badge-large">${p.desconto_percentual}% OFF</div>
+                <h3>${p.nome}</h3>
+                <p class="promocao-descricao">${p.descricao || 'Aproveite esta oferta especial!'}</p>
+                <div class="promocao-detalhes">
+                    <div class="promocao-detail">
+                        <span class="detail-icon">🏷️</span>
+                        <span>${p.tipo_servico === 'AMBOS' ? 'Hotel e Garagem' : p.tipo_servico}</span>
+                    </div>
+                    <div class="promocao-detail">
+                        <span class="detail-icon">📅</span>
+                        <span>Válido até ${formatarData(p.data_fim)}</span>
+                    </div>
+                    ${p.minimo_visitas > 0 ? `
+                        <div class="promocao-detail">
+                            <span class="detail-icon">⭐</span>
+                            <span>Mínimo ${p.minimo_visitas} visitas</span>
+                        </div>
+                    ` : ''}
+                </div>
+            </div>
+        `).join('');
+        } catch (error) {
+            grid.innerHTML = '<p class="text-center text-error">Erro ao carregar promoções</p>';
+        }
+    }
+
+    function formatarData(isoString) {
+        if (!isoString) return '-';
+        return new Date(isoString).toLocaleDateString('pt-BR');
+    }
+
+    function formatarDataHora(isoString) {
+        if (!isoString) return '-';
+        const data = new Date(isoString);
+        return data.toLocaleDateString('pt-BR') + ' às ' + data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Carregar promoções ao iniciar
+    carregarPromocoes();
+</script>
+{% endblock %}

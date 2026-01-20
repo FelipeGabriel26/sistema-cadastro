@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard Administrador{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1>👨‍💼 Painel do Administrador</h1>
+        <p>Visão completa do sistema</p>
+    </div>
+
+    <!-- Cards de Estatísticas -->
+    <div class="stats-grid">
+        <div class="stat-card stat-card-blue">
+            <div class="stat-icon">👥</div>
+            <div class="stat-content">
+                <h3 id="totalClientes">-</h3>
+                <p>Clientes</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-card-green">
+            <div class="stat-icon">👔</div>
+            <div class="stat-content">
+                <h3 id="totalFuncionarios">-</h3>
+                <p>Funcionários</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-card-purple">
+            <div class="stat-icon">📋</div>
+            <div class="stat-content">
+                <h3 id="reservasAtivas">-</h3>
+                <p>Reservas Ativas</p>
+            </div>
+        </div>
+
+        <div class="stat-card stat-card-gold">
+            <div class="stat-icon">💰</div>
+            <div class="stat-content">
+                <h3 id="receitaTotal">-</h3>
+                <p>Receita Total</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs de Navegação -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('usuarios')">Usuários</button>
+        <button class="tab-btn" onclick="switchTab('funcionarios')">Presença</button>
+        <button class="tab-btn" onclick="switchTab('clientes')">Clientes Frequentes</button>
+    </div>
+
+    <!-- Tab: Usuários -->
+    <div id="tab-usuarios" class="tab-content active">
+        <div class="section-header">
+            <h2>Gerenciar Usuários</h2>
+            <div class="filter-group">
+                <select id="filtroTipo" onchange="carregarUsuarios()" class="form-select">
+                    <option value="">Todos os tipos</option>
+                    <option value="CLIENTE">Clientes</option>
+                    <option value="FUNCIONARIO">Funcionários</option>
+                    <option value="ADM">Administradores</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Email</th>
+                        <th>CPF</th>
+                        <th>Tipo</th>
+                        <th>Visitas</th>
+                        <th>Última Visita</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="usuariosTableBody">
+                    <tr>
+                        <td colspan="8" class="text-center">Carregando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab: Presença de Funcionários -->
+    <div id="tab-funcionarios" class="tab-content">
+        <div class="section-header">
+            <h2>Presença de Funcionários - Hoje</h2>
+        </div>
+
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nome</th>
+                        <th>Status</th>
+                        <th>Entrada</th>
+                        <th>Saída</th>
+                    </tr>
+                </thead>
+                <tbody id="presencaTableBody">
+                    <tr>
+                        <td colspan="5" class="text-center">Carregando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab: Clientes Frequentes -->
+    <div id="tab-clientes" class="tab-content">
+        <div class="section-header">
+            <h2>Clientes Mais Frequentes</h2>
+            <div class="filter-group">
+                <select id="filtroPeriodo" onchange="carregarClientesFrequentes()" class="form-select">
+                    <option value="3">Últimos 3 meses</option>
+                    <option value="6">Últimos 6 meses</option>
+                    <option value="12" selected>Últimos 12 meses</option>
+                    <option value="15">Últimos 15 meses</option>
+                    <option value="18">Últimos 18 meses</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="clientes-grid" id="clientesFrequentesGrid">
+            <p class="text-center">Carregando...</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentTab = 'usuarios';
+
+    function switchTab(tabName) {
+        // Atualizar botões
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+
+        // Atualizar conteúdo
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`).classList.add('active');
+
+        currentTab = tabName;
+
+        // Carregar dados da tab
+        if (tabName === 'usuarios') carregarUsuarios();
+        else if (tabName === 'funcionarios') carregarPresenca();
+        else if (tabName === 'clientes') carregarClientesFrequentes();
+    }
+
+    async function carregarEstatisticas() {
+        try {
+            const response = await fetch('/api/admin/estatisticas');
+            const data = await response.json();
+
+            document.getElementById('totalClientes').textContent = data.usuarios.clientes;
+            document.getElementById('totalFuncionarios').textContent = data.usuarios.funcionarios;
+            document.getElementById('reservasAtivas').textContent = data.reservas_ativas;
+            document.getElementById('receitaTotal').textContent = 'R$ ' + data.receita_total.toFixed(2);
+        } catch (error) {
+            console.error('Erro ao carregar estatísticas:', error);
+        }
+    }
+
+    async function carregarUsuarios() {
+        const tipo = document.getElementById('filtroTipo').value;
+        const tbody = document.getElementById('usuariosTableBody');
+
+        try {
+            const url = tipo ? `/api/admin/usuarios?tipo=${tipo}` : '/api/admin/usuarios';
+            const response = await fetch(url);
+            const data = await response.json();
+
+            if (data.usuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">Nenhum usuário encontrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.usuarios.map(u => `
+            <tr>
+                <td>${u.id}</td>
+                <td>${u.nome}</td>
+                <td>${u.email}</td>
+                <td>${u.cpf}</td>
+                <td><span class="badge badge-${u.tipo_usuario.toLowerCase()}">${u.tipo_usuario}</span></td>
+                <td>${u.total_visitas}</td>
+                <td>${formatarData(u.ultima_visita)}</td>
+                <td><span class="status-badge status-${u.ativo ? 'active' : 'inactive'}">${u.ativo ? 'Ativo' : 'Inativo'}</span></td>
+            </tr>
+        `).join('');
+        } catch (error) {
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center text-error">Erro ao carregar usuários</td></tr>';
+        }
+    }
+
+    async function carregarPresenca() {
+        const tbody = document.getElementById('presencaTableBody');
+
+        try {
+            const response = await fetch('/api/admin/funcionarios-presenca');
+            const data = await response.json();
+
+            if (data.funcionarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" class="text-center">Nenhum funcionário cadastrado</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = data.funcionarios.map(f => `
+            <tr>
+                <td>${f.id}</td>
+                <td>${f.nome}</td>
+                <td><span class="status-badge status-${f.presente ? 'active' : 'inactive'}">${f.presente ? '✓ Presente' : '✗ Ausente'}</span></td>
+                <td>${f.hora_entrada ? formatarHora(f.hora_entrada) : '-'}</td>
+                <td>${f.hora_saida ? formatarHora(f.hora_saida) : '-'}</td>
+            </tr>
+        `).join('');
+        } catch (error) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center text-error">Erro ao carregar presença</td></tr>';
+        }
+    }
+
+    async function carregarClientesFrequentes() {
+        const meses = document.getElementById('filtroPeriodo').value;
+        const grid = document.getElementById('clientesFrequentesGrid');
+
+        try {
+            const response = await fetch(`/api/admin/clientes-frequentes?meses=${meses}`);
+            const data = await response.json();
+
+            if (data.clientes.length === 0) {
+                grid.innerHTML = '<p class="text-center">Nenhum cliente encontrado no período</p>';
+                return;
+            }
+
+            grid.innerHTML = data.clientes.map((c, index) => `
+            <div class="cliente-card">
+                <div class="cliente-rank">#${index + 1}</div>
+                <h3>${c.nome}</h3>
+                <p class="cliente-email">${c.email}</p>
+                <div class="cliente-stats">
+                    <div class="cliente-stat">
+                        <span class="stat-label">Visitas</span>
+                        <span class="stat-value">${c.total_visitas}</span>
+                    </div>
+                    <div class="cliente-stat">
+                        <span class="stat-label">Última visita</span>
+                        <span class="stat-value">${formatarData(c.ultima_visita)}</span>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+        } catch (error) {
+            grid.innerHTML = '<p class="text-center text-error">Erro ao carregar clientes</p>';
+        }
+    }
+
+    function formatarData(isoString) {
+        if (!isoString) return '-';
+        const data = new Date(isoString);
+        return data.toLocaleDateString('pt-BR');
+    }
+
+    function formatarHora(isoString) {
+        if (!isoString) return '-';
+        const data = new Date(isoString);
+        return data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    // Carregar dados iniciais
+    carregarEstatisticas();
+    carregarUsuarios();
+
+    // Atualizar estatísticas a cada 30 segundos
+    setInterval(carregarEstatisticas, 30000);
+</script>
+{% endblock %}

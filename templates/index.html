@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+
+{% block title %}Sistema de Reservas - Home{% endblock %}
+
+{% block content %}
+<div class="store-hero">
+    <div class="hero-content">
+        <h1>Sistema de Reserva de Vagas<br>e Estacionamento</h1>
+        <p class="hero-description">
+            Sistema de Testes para gerenciamento de vagas, reservas e logins.
+        </p>
+    </div>
+</div>
+
+<!-- Barra de Busca Estilo Booking -->
+<div class="hero-search-container">
+    <form class="search-box">
+        <div class="search-field">
+            <i class="fas fa-bed"></i>
+            <span>Para onde você vai?</span>
+        </div>
+        <div class="search-field">
+            <i class="fas fa-calendar-alt"></i>
+            <span>Check-in — Check-out</span>
+        </div>
+        <div class="search-field">
+            <i class="fas fa-users"></i>
+            <span>2 adultos · 0 crianças · 1 quarto</span>
+        </div>
+        <button type="button" class="search-btn">Pesquisar</button>
+    </form>
+</div>
+
+<section id="produtos" class="products-section">
+    <div class="main-content">
+        <h2 class="section-title" style="text-align: left; border: none; margin-bottom: 1rem;">Nossos Serviços</h2>
+
+        <div class="products-grid">
+            <!-- Produto 1: Hotel Look Booking -->
+            <div class="product-card" style="display: flex; flex-direction: column;">
+                <div class="product-image hotel-bg" style="height: 250px;">
+                    <span class="badge" style="top: 10px; left: 10px; right: auto;">Gênio</span>
+                </div>
+                <div class="product-info" style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h3 style="margin-bottom: 0.25rem;">Hospedagem Premium</h3>
+                            <p style="font-size: 0.8rem; color: var(--primary); text-decoration: underline;">Centro,
+                                Cidade</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; font-size: 0.9rem;">Fabuloso</div>
+                                <div style="font-size: 0.75rem; color: #666;">2.450 avaliações</div>
+                            </div>
+                            <div
+                                style="background: var(--primary); color: white; padding: 6px; border-radius: 6px 6px 6px 0; font-weight: bold;">
+                                8.9</div>
+                        </div>
+                    </div>
+
+                    <p style="margin: 1rem 0; font-size: 0.9rem; flex: 1;">
+                        Quarto Duplo Deluxe com Vista da Cidade. Café da manhã incluído.
+                        <br><span style="color: var(--success); font-weight: bold; font-size: 0.8rem;">Cancelamento
+                            Grátis</span>
+                    </p>
+
+                    <div style="text-align: right; margin-top: auto;">
+                        <div style="font-size: 0.8rem; color: #666;">1 noite, 2 adultos</div>
+                        <div class="product-price" style="justify-content: flex-end;">
+                            <span class="currency">R$</span>
+                            <span class="value">250</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">+R$ 45 de impostos e taxas
+                        </div>
+                        <a href="{{ url_for('checkout', tipo='HOTEL') }}" class="btn btn-primary btn-block">Ver
+                            disponibilidade ></a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Produto 2: Garagem Look Booking -->
+            <div class="product-card" style="display: flex; flex-direction: column;">
+                <div class="product-image garage-bg" style="height: 250px;">
+                    <span class="badge badge-secondary"
+                        style="top: 10px; left: 10px; right: auto;">Estacionamento</span>
+                </div>
+                <div class="product-info" style="flex: 1; display: flex; flex-direction: column;">
+                    <div style="display: flex; justify-content: space-between; align-items: start;">
+                        <div>
+                            <h3 style="margin-bottom: 0.25rem;">Estacionamento Seguro</h3>
+                            <p style="font-size: 0.8rem; color: var(--primary); text-decoration: underline;">Zona Sul,
+                                Cidade</p>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 5px;">
+                            <div style="text-align: right;">
+                                <div style="font-weight: 600; font-size: 0.9rem;">Muito bom</div>
+                                <div style="font-size: 0.75rem; color: #666;">540 avaliações</div>
+                            </div>
+                            <div
+                                style="background: var(--primary); color: white; padding: 6px; border-radius: 6px 6px 6px 0; font-weight: bold;">
+                                8.2</div>
+                        </div>
+                    </div>
+
+                    <p style="margin: 1rem 0; font-size: 0.9rem; flex: 1;">
+                        Vaga coberta com monitoramento 24h. Acesso fácil e seguro.
+                        <br><span style="color: var(--success); font-weight: bold; font-size: 0.8rem;">Sem
+                            pré-pagamento</span>
+                    </p>
+
+                    <div style="text-align: right; margin-top: auto;">
+                        <div style="font-size: 0.8rem; color: #666;">Diária</div>
+                        <div class="product-price" style="justify-content: flex-end;">
+                            <span class="currency">R$</span>
+                            <span class="value">35</span>
+                        </div>
+                        <div style="font-size: 0.8rem; color: #666; margin-bottom: 10px;">Impostos incluídos</div>
+                        <a href="{{ url_for('checkout', tipo='GARAGEM') }}" class="btn btn-primary btn-block">Ver
+                            disponibilidade ></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Seção Promocional -->
+<section class="promo-section">
+    <div class="promo-content">
+        <h2>Vantagens e Ofertas Exclusivas</h2>
+        <div class="promo-grid">
+            {% for promocao in promocoes %}
+            <div class="promo-card">
+                <h3>{{ promocao.nome }}</h3>
+                <p>{{ promocao.descricao }}</p>
+                <div class="discount-tag">{{ promocao.desconto_percentual }}% OFF</div>
+            </div>
+            {% else %}
+            <p>Nenhuma promoção ativa no momento.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
